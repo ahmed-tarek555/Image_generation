@@ -6,7 +6,10 @@ format = 'RGB'
 target_size = (128, 128)
 
 def process_img(path):
-    img = Image.open(path).convert(format)
+    if isinstance(path, Image.Image):
+        img = path.convert(format)
+    else:
+        img = Image.open(path).convert(format)
     img = img.resize(target_size)
     img = transform(img)
     return img

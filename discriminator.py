@@ -1,7 +1,13 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from utils.load_dataset import load_dataset
 
+data, targets = load_dataset('real', 1)
+
+def get_batch(batch_size, data, targets):
+    batch = torch.randint(0, data.shape[0], (batch_size, ))
+    return data[batch], targets[batch]
 
 def conv_block(in_channels, out_channels, kernel_size, stride=1, padding=0):
     return nn.Sequential(nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding),
@@ -19,8 +25,15 @@ class Discriminator(nn.Module):
         #                         nn.ReLU())
 
 
-    def forward(self, x):
+    def forward(self, x, y=None):
         x = self.conv(x)
 
         logits = x
-        print(logits)
+        return logits
+
+model = Discriminator()
+x, y = get_batch(32, data, targets)
+
+
+logits = model(x)
+print(logits.shape)
