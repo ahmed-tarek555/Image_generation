@@ -1,13 +1,6 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-from discriminator import Discriminator
 
-discriminator = Discriminator()
-def conv_block(in_channels, out_channels, kernel_size, stride=1, padding=0):
-    return nn.Sequential(nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding),
-                         nn.BatchNorm2d(out_channels),
-                         nn.ReLU())
 
 class Generator(nn.Module):
     def __init__(self,  z_dim=100, img_channels=3):
@@ -38,23 +31,7 @@ class Generator(nn.Module):
             nn.Tanh()
         )
 
-    def forward(self, x, y=False):
-
+    def forward(self, x):
         out_img = self.net(x)
-        if y :
-            probs = discriminator(out_img)
-            loss = probs[0].log()
-            return loss
-        else:
-            return out_img
+        return out_img
 
-    def _train(self, n_iter, lr, data):
-        optim = torch.optim.AdamW(self.parameters(), lr)
-
-        for i in range(n_iter):
-            loss = self(data, True)
-
-            optim.zero_grad()
-            loss.backward()
-
-            optim.step()
