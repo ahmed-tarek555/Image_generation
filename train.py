@@ -1,8 +1,6 @@
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 from torchvision.transforms.functional import to_pil_image
-from PIL import Image
 from generator import Generator
 from discriminator import Discriminator
 from utils.load_dataset import  load_dataset
@@ -10,26 +8,30 @@ from utils.load_dataset import  load_dataset
 discriminator = Discriminator()
 generator = Generator()
 data, targets = load_dataset('real', 1)
+data = F.interpolate(data, size=(32, 32), mode='bilinear', align_corners=False)
+data = data*2 - 1
 batch_size = 32
-lr = 1e-4
-n_iter = 100
-
+gen_lr = 2e-4
+disc_lr = 2e-5
 
 def get_batch(batch_size, data, targets):
     batch = torch.randint(0, data.shape[0], (batch_size, ))
     return data[batch], targets[batch]
 
-def train(n_iter):
-    gen_optim = torch.optim.AdamW(generator.parameters(), lr)
-    disc_optim = torch.optim.AdamW(discriminator.parameters(), lr)
+def train(n_iter, gen_lr, disc_lr):
+    global fake_img
+    gen_optim = torch.optim.AdamW(generator.parameters(), gen_lr)
+    disc_optim = torch.optim.AdamW(discriminator.parameters(), disc_lr)
     for i in range(n_iter):
         init = torch.randn(batch_size, 100, 1, 1)
+
 
         fake_img = generator(init)
         logits = discriminator(fake_img)
         gen_loss = F.cross_entropy(logits, torch.ones(batch_size, dtype=torch.long))
         gen_optim.zero_grad()
         gen_loss.backward()
+        print(generator.net[0].weight.grad)
         print(f'gen loss is {gen_loss}')
         gen_optim.step()
 
@@ -42,15 +44,19 @@ def train(n_iter):
         disc_loss_fake = discriminator(x_fake, y_fake)
         disc_loss = disc_loss_fake + disc_loss_real
         disc_loss.backward()
+        print(f'discriminators wights {discriminator.fc[0].weight.grad}')
         print(f'disc loss is {disc_loss}')
         disc_optim.step()
 
 
-train(30)
+train(10000, gen_lr, disc_lr)
+
+torch.save(generator.state_dict(), 'generator_model.pth')
+torch.save(discriminator.state_dict(), 'discriminator.pth')
 
 generator.eval()
 img = generator(torch.randn(1, 100, 1, 1))
 img = img.squeeze(0)
-img  = (img + 1)/2
+img  = (img+1)/2
 pil_img = to_pil_image(img)
 pil_img.show()
