@@ -6,22 +6,24 @@ import torch.nn.functional as F
 def conv_block(in_channels, out_channels, kernel_size, stride=1, padding=0):
     return nn.Sequential(nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding),
                          nn.BatchNorm2d(out_channels),
-                         nn.ReLU())
+                         nn.LeakyReLU())
 
 class Discriminator(nn.Module):
     def __init__(self):
         super().__init__()
         # input 32x32
-        self.conv = nn.Sequential(conv_block(3, 32, 3, 1),  #30x30
+        self.conv = nn.Sequential(conv_block(3, 64, 3, 1),  #30x30
                                   nn.Dropout(p=0.2),
-                                  conv_block(32, 64, 3, 1), #28x28
+                                  conv_block(64, 128, 3, 1), #28x28
                                   nn.Dropout(p=0.2),
-                                  conv_block(64, 128, 4, 2) #13x13
+                                  conv_block(128, 256, 4, 2),#13x13
+                                  nn.Dropout(p=0.2),
+                                  conv_block(256, 512, 3, 2),#6x6
                                   )
 
-        self.projection = nn.Conv2d(3, 128, 8, 2)
+        self.projection = nn.Conv2d(3, 512, 17, 3)
 
-        self.fc = nn.Sequential(nn.Linear(13*13*128, 2),
+        self.fc = nn.Sequential(nn.Linear(6*6*512, 2),
                                 nn.Dropout(p=0.2),
                                 )
 
