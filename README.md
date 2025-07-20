@@ -1,2 +1,2 @@
 # Image_generation
-An image generation ai model
+A GAN image generation ai model using generator discriminator architecture.
